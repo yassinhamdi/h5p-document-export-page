@@ -8,13 +8,14 @@ H5P.DocumentExportPage.CreateDocument = (function ($, EventDispatcher) {
    * @param {Array} inputFields Array of input strings that should be exported
    * @returns {Object} CreateDocument CreateDocument instance
    */
-  function CreateDocument(params, title, submitEnabled, inputFields, inputGoals) {
+  function CreateDocument(params, title, submitEnabled, inputFields, inputGoals,metadata) {
     EventDispatcher.call(this);
 
     this.inputFields = inputFields;
     this.inputGoals = inputGoals;
 
     this.params = params;
+    this.metadata = metadata;
     this.title = title;
     this.submitEnabled = submitEnabled;
 
@@ -49,7 +50,8 @@ H5P.DocumentExportPage.CreateDocument = (function ($, EventDispatcher) {
       this.params.submitSuccessTextLabel,
       this.params.selectAllTextLabel,
       this.params.exportTextLabel,
-      exportObject
+      exportObject,
+      this.metadata
     );
     exportPage.getElement().prependTo($container);
     exportPage.focus();

@@ -1,15 +1,15 @@
 import { saveAs } from "file-saver";
-import {HeadingLevel, Paragraph, Document, TextRun, Packer} from "docx";
+import {HeadingLevel, Paragraph, Document, TextRun, AlignmentType, Packer} from "docx";
 
 /**
  * Class responsible for creating an export page
  */
 H5P.DocumentExportPage.ExportPage = (function ($, EventDispatcher) {
 
-  function ExportPage(header, $body, enableSubmit, submitTextLabel, submitSuccessTextLabel, selectAllTextLabel, exportTextLabel, templateContent) {
+  function ExportPage(header, $body, enableSubmit, submitTextLabel, submitSuccessTextLabel, selectAllTextLabel, exportTextLabel, templateContent, metadata) {
     EventDispatcher.call(this);
     var self = this;
-
+    this.metadata = metadata;
     self.templateContent = templateContent;
     self.header = header;
 
@@ -310,11 +310,16 @@ H5P.DocumentExportPage.ExportPage = (function ($, EventDispatcher) {
   ExportPage.prototype.generateDocxObject = function () {
     const self = this;
     let page = [], index = 0;
-
+    // fix alignment Style
+    const contentLanguage = self.metadata && self.metadata.defaultLanguage
+      ? self.metadata.defaultLanguage : 'en';
+    let TextAlign = 'left'
+    if( contentLanguage == 'ar' ) TextAlign = 'right'
     // Add title to the document
     page[index] = new Paragraph({
       text: self.header,
-      heading: HeadingLevel.HEADING_1
+      heading: HeadingLevel.HEADING_1,
+      alignment: TextAlign
     });
     index++;
     // create docx paragraphs if we have standard page data
@@ -322,7 +327,8 @@ H5P.DocumentExportPage.ExportPage = (function ($, EventDispatcher) {
       self.templateContent.flatInputList.forEach(function (content) {
         page[index] = new Paragraph({
           text: content.title,
-          heading: HeadingLevel.HEADING_1
+          heading: HeadingLevel.HEADING_1,
+          alignment: TextAlign
         });
         index++;
         if (content.inputArray) {
@@ -331,7 +337,8 @@ H5P.DocumentExportPage.ExportPage = (function ($, EventDispatcher) {
             const fieldValue = field.value.split("\n").map(line=>new TextRun({break: 1,text: line.replace(/(\r\t|\t|\r)/gm, ""), size: 28}));
             const standardPage = [...fieldDescription, ...fieldValue]
             page[index] = new Paragraph({
-              children: standardPage
+              children: standardPage,
+              alignment: TextAlign
             });
             index++;
           });
@@ -342,7 +349,8 @@ H5P.DocumentExportPage.ExportPage = (function ($, EventDispatcher) {
     if (self.templateContent.goalsTitle) {
       page[index] = new Paragraph({
         text: self.templateContent.goalsTitle,
-        heading: HeadingLevel.HEADING_1
+        heading: HeadingLevel.HEADING_1,
+        alignment: TextAlign
       });
       index++;
     }
@@ -350,8 +358,10 @@ H5P.DocumentExportPage.ExportPage = (function ($, EventDispatcher) {
     if (self.templateContent.sortedGoalsList) {
       self.templateContent.sortedGoalsList.forEach(function (content) {
         if (content.goalArray.length > 0) {
+          let contentLabel = contentLanguage == 'ar' ? (": " +content.label) : (content.label + " :")
           page[index] = new Paragraph({
-            children: [new TextRun({break: 1,text: content.label+":", size: 28, bold: 1})]
+            children: [new TextRun({break: 1,text: contentLabel, size: 28, bold: 1 })],
+            alignment: TextAlign
           });
           index++;
           content.goalArray.forEach(function (goal) {
@@ -359,7 +369,9 @@ H5P.DocumentExportPage.ExportPage = (function ($, EventDispatcher) {
               children: [new TextRun({text: goal.text, size: 28})],
               bullet: {
                 level: 0
-              }
+              },
+              bidirectional: contentLanguage == 'ar' ? true : false,
+              alignment: contentLanguage == 'ar' ? AlignmentType.START : AlignmentType.LEFT // Aligner à droite
             });
             index++;
           });
